@@ -158,21 +158,53 @@ def get_runtime_inputs(
 
     if args.interaktif:
         print("Mode Input Interaktif (tekan Enter untuk memakai nilai default dari config.py)")
-        in_pt = input(f"  Plaintext [{pt_str}]: ")
-        if in_pt != "":
-            pt_str = in_pt
-        in_key = input(f"  Key (hex 1 byte) [{key_str}]: ").strip()
-        if in_key != "":
-            key_str = in_key
-        if use_iv:
-            in_iv = input(f"  IV (hex 1 byte) [{iv_str}]: ").strip()
-            if in_iv != "":
-                iv_str = in_iv
-        print()
+        try:
+            while True:
+                in_pt = input(f"  Plaintext [{pt_str}]: ")
+                candidate_pt = in_pt if in_pt != "" else pt_str
+                try:
+                    text_to_blocks(candidate_pt)
+                    pt_str = candidate_pt
+                    break
+                except ValueError as err:
+                    print(f"  Input tidak valid: {err}")
 
-    # Validasi input
-    text_to_blocks(pt_str)
-    key_val = parse_hex_byte(key_str, "Key")
-    iv_val = parse_hex_byte(iv_str, "IV")
+            while True:
+                in_key = input(f"  Key (hex 1 byte) [{key_str}]: ").strip()
+                candidate_key = in_key if in_key != "" else key_str
+                try:
+                    key_val = parse_hex_byte(candidate_key, "Key")
+                    key_str = candidate_key
+                    break
+                except ValueError as err:
+                    print(f"  Input tidak valid: {err}")
+
+            if use_iv:
+                while True:
+                    in_iv = input(f"  IV (hex 1 byte) [{iv_str}]: ").strip()
+                    candidate_iv = in_iv if in_iv != "" else iv_str
+                    try:
+                        iv_val = parse_hex_byte(candidate_iv, "IV")
+                        iv_str = candidate_iv
+                        break
+                    except ValueError as err:
+                        print(f"  Input tidak valid: {err}")
+            else:
+                iv_val = parse_hex_byte(iv_str, "IV")
+        except (KeyboardInterrupt, EOFError):
+            print("\nInput dibatalkan.")
+            sys.exit(0)
+        print()
+        return pt_str, key_val, iv_val
+
+    # Validasi input dari argumen CLI / config.py
+    try:
+        text_to_blocks(pt_str)
+        key_val = parse_hex_byte(key_str, "Key")
+        iv_val = parse_hex_byte(iv_str, "IV")
+    except ValueError as err:
+        print(f"Error input: {err}", file=sys.stderr)
+        sys.exit(1)
+
     return pt_str, key_val, iv_val
 
